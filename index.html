@@ -4,125 +4,106 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Coupled Pendulum Visualization</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        canvas { width: 100% !important; height: 400px !important; }
+        .slider { width: 100%; }
+    </style>
 </head>
 <body>
     <h1>Coupled Pendulum Visualization</h1>
-    <p>This project visualizes the behavior of a coupled pendulum using Python and Matplotlib.</p>
-    <h2>Code</h2>
-    <pre>
-        <code>
-import numpy as np
-import matplotlib.pyplot as plt
-from matplotlib.animation import FuncAnimation
-from matplotlib.widgets import Slider, Button
-from matplotlib import rcParams
+    <canvas id="pendulumChart"></canvas>
+    <div>
+        <label for="omega1">ω₁: <span id="omega1Value">6.28</span></label>
+        <input type="range" id="omega1" class="slider" min="0.1" max="10" step="0.1" value="6.28">
+    </div>
+    <div>
+        <label for="omega2">ω₂: <span id="omega2Value">9.42</span></label>
+        <input type="range" id="omega2" class="slider" min="0.1" max="10" step="0.1" value="9.42">
+    </div>
+    <button id="restartBtn">Restart</button>
 
-rcParams['toolbar'] = 'None'
+    <script>
+        function coupledPendulumX1(t, d, omega1, omega2) {
+            return d * Math.cos((omega2 - omega1) / 2 * t) * Math.cos((omega1 + omega2) / 2 * t);
+        }
 
-def coupled_pendulum_x1(t, d, omega1, omega2):
-    return d * np.cos((omega2 - omega1) / 2 * t) * np.cos((omega1 + omega2) / 2 * t)
+        function coupledPendulumX2(t, d, omega1, omega2) {
+            return d * Math.sin((omega2 - omega1) / 2 * t) * Math.sin((omega1 + omega2) / 2 * t);
+        }
 
-def coupled_pendulum_x2(t, d, omega1, omega2):
-    return d * np.sin((omega2 - omega1) / 2 * t) * np.sin((omega1 + omega2) / 2 * t)
+        function simplifiedPendulum(t, d, omega_h) {
+            return d * Math.cos(omega_h * t);
+        }
 
-def simplified_pendulum(t, d, omega_h):
-    return d * np.cos(omega_h * t)
+        const ctx = document.getElementById('pendulumChart').getContext('2d');
+        let chart;
+        let animationId;
 
-fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(18, 10))
-plt.subplots_adjust(left=0.05, bottom=0.3, right=0.95, top=0.9, wspace=0.3)
+        function createChart(omega1, omega2) {
+            const t = Array.from({length: 1000}, (_, i) => i * 0.01);
+            const omega_h = (omega1 + omega2) / 2;
+            const x1 = t.map(ti => coupledPendulumX1(ti, 1, omega1, omega2));
+            const y1 = t.map(ti => simplifiedPendulum(ti, 0.5, omega_h));
 
-ax1.set_xlim(-2, 2)
-ax1.set_ylim(-4, 1)
-ax1.set_aspect('equal')
-ax1.axis('off')
+            chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: t,
+                    datasets: [{
+                        label: 'Coupled Pendulum',
+                        data: x1,
+                        borderColor: 'blue',
+                        fill: false
+                    }, {
+                        label: 'Simplified Pendulum',
+                        data: y1,
+                        borderColor: 'red',
+                        fill: false
+                    }]
+                },
+                options: {
+                    animation: false,
+                    responsive: true,
+                    scales: {
+                        x: {
+                            type: 'linear',
+                            position: 'bottom',
+                            title: {
+                                display: true,
+                                text: 'Time'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Position'
+                            }
+                        }
+                    }
+                }
+            });
+        }
 
-ax2.set_xlim(0, 10)
-ax2.set_ylim(-1, 1)
-ax2.axis('off')
+        function updateChart() {
+            const omega1 = parseFloat(document.getElementById('omega1').value);
+            const omega2 = parseFloat(document.getElementById('omega2').value);
+            document.getElementById('omega1Value').textContent = omega1.toFixed(2);
+            document.getElementById('omega2Value').textContent = omega2.toFixed(2);
 
-line1, = ax1.plot([], [], 'o-', color='blue', lw=4, markersize=10)
-line2, = ax1.plot([], [], 'o-', color='orange', lw=4, markersize=10)
-line3, = ax1.plot([], [], 'o-', color='orange', lw=4, markersize=10)
-connector, = ax1.plot([], [], 'orange', lw=2)
-line4, = ax2.plot([], [], lw=2, label='Coupled Pendulum')
-line5, = ax2.plot([], [], lw=2, label='Simplified Pendulum')
-fig.legend(['Simplified Pendulum', 'Coupled Pendulum'], loc='upper right', fontsize=16, frameon=False)
+            if (chart) {
+                chart.destroy();
+            }
+            cancelAnimationFrame(animationId);
+            createChart(omega1, omega2);
+        }
 
-omega_values_ax = plt.axes([0.05, 0.05, 0.9, 0.05], facecolor='w')
-omega_values_ax.axis('off')
-omega_h_text = omega_values_ax.text(0.25, 0.5, '', transform=omega_values_ax.transAxes, fontsize=12, ha='center')
-omega_l_text = omega_values_ax.text(0.75, 0.5, '', transform=omega_values_ax.transAxes, fontsize=12, ha='center')
+        document.getElementById('omega1').addEventListener('input', updateChart);
+        document.getElementById('omega2').addEventListener('input', updateChart);
+        document.getElementById('restartBtn').addEventListener('click', updateChart);
 
-def init():
-    line1.set_data([], [])
-    line2.set_data([], [])
-    line3.set_data([], [])
-    connector.set_data([], [])
-    line4.set_data([], [])
-    line5.set_data([], [])
-    return line1, line2, line3, connector, line4, line5
-
-def update(frame, t, omega1, omega2, omega_h):
-    y1 = simplified_pendulum(t[:frame+1], 0.5, omega_h)
-    x1 = coupled_pendulum_x1(t[:frame+1], 1, omega1, omega2)
-    x2 = coupled_pendulum_x2(t[:frame+1], 1, omega1, omega2)
-    
-    if y1.size > 0:
-        line1.set_data([0, 2 * np.sin(y1[-1])], [0, -2 * np.cos(y1[-1])])
-    if x1.size > 0 and x2.size > 0:
-        sin_x2, cos_x2 = np.sin(x2[-1]), np.cos(x2[-1])
-        sin_x1 = np.sin(x1[-1])
-        line2.set_data([0, sin_x2], [0, -cos_x2])
-        line3.set_data([sin_x2, sin_x1], [-cos_x2, -2 * cos_x2])
-        connector.set_data([sin_x2, sin_x1], [-cos_x2, -2 * cos_x2])
-    
-    line4.set_data(t[:frame+1], x1 / 2)
-    line5.set_data(t[:frame+1], y1)
-    return line1, line2, line3, connector, line4, line5
-
-def update_plot(val=None):
-    global ani
-    omega1 = omega1_slider.val
-    omega2 = omega2_slider.val
-    omega_h = (omega1 + omega2) / 2
-    t = np.linspace(0, 10, 1000)
-
-    omega_h_text.set_text(f'ωₕ = {omega_h:.2f}')
-    omega_l_text.set_text(f'ωₗ = {(omega2 - omega1) / 2:.2f}')
-
-    if 'ani' in globals():
-        ani.event_source.stop()
-
-    ani = FuncAnimation(fig, update, frames=len(t), fargs=(t, omega1, omega2, omega_h), init_func=init, blit=True, interval=20/speed_slider.val)
-    plt.draw()
-
-def restart(event):
-    update_plot()
-
-axcolor = 'lightgoldenrodyellow'
-ax_omega1 = plt.axes([0.1, 0.2, 0.65, 0.03], facecolor=axcolor)
-ax_omega2 = plt.axes([0.1, 0.15, 0.65, 0.03], facecolor=axcolor)
-ax_speed = plt.axes([0.1, 0.1, 0.65, 0.03], facecolor=axcolor)
-ax_button = plt.axes([0.8, 0.1, 0.1, 0.04])
-
-omega1_slider = Slider(ax_omega1, 'ω₁', 0.1, 10, valinit=2 * np.pi * 1, valstep=0.1)
-omega2_slider = Slider(ax_omega2, 'ω₂', 0.1, 10, valinit=2 * np.pi * 1.5, valstep=0.1)
-speed_slider = Slider(ax_speed, 'Speed', 0.1, 5, valinit=1, valstep=0.1)
-button = Button(ax_button, 'Restart', color=axcolor, hovercolor='0.975')
-
-omega1_slider.on_changed(update_plot)
-omega2_slider.on_changed(update_plot)
-speed_slider.on_changed(update_plot)
-button.on_clicked(restart)
-
-t = np.linspace(0, 10, 1000)
-omega_h = (omega1_slider.val + omega2_slider.val) / 2
-omega_l = (omega2_slider.val - omega1_slider.val) / 2
-update_plot()
-ani = FuncAnimation(fig, update, frames=len(t), fargs=(t, omega1_slider.val, omega2_slider.val, omega_h), init_func=init, blit=True, interval=20/speed_slider.val)
-
-plt.show()
-        </code>
-    </pre>
+        updateChart();
+    </script>
 </body>
 </html>
