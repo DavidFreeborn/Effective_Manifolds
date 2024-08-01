@@ -102,37 +102,38 @@
         function drawPendulum() {
             ctx1.clearRect(0, 0, pendulumCanvas.width, pendulumCanvas.height);
             ctx1.save();
-            ctx1.translate(pendulumCanvas.width / 2, 50);
+            ctx1.translate(pendulumCanvas.width / 2, pendulumCanvas.height / 6);
 
-            const scale = 200; // Scale for larger pendulums
+            const scale = 200; // Increased scale for larger pendulums
             const x1 = coupledPendulumX1(t, 1, omega1, omega2) * scale;
             const x2 = coupledPendulumX2(t, 1, omega1, omega2) * scale;
-            const y = simplifiedPendulum(t, 0.5, (omega1 + omega2) / 2) * scale * 2; // Double the displacement
+            const y = simplifiedPendulum(t, 1, (omega1 + omega2) / 2) * scale;
+            const length = 300; // Standard length for the pendulums
 
             // Draw simplified pendulum
             ctx1.beginPath();
             ctx1.moveTo(0, 0);
-            ctx1.lineTo(y, 300); // Dynamic horizontal position with fixed length
+            ctx1.lineTo(0, length); 
             ctx1.strokeStyle = 'blue';
             ctx1.lineWidth = 4;
             ctx1.stroke();
             ctx1.beginPath();
-            ctx1.arc(y, 300, 10, 0, Math.PI * 2);
+            ctx1.arc(0, length, 10, 0, Math.PI * 2);
             ctx1.fill();
 
             // Draw coupled pendulum
             ctx1.beginPath();
             ctx1.moveTo(0, 0);
-            ctx1.lineTo(x2, 150); // Dynamic position for x2
-            ctx1.lineTo(x1, 300); // Dynamic position for x1
+            ctx1.lineTo(x2, length / 2); 
+            ctx1.lineTo(x1, length); 
             ctx1.strokeStyle = 'orange';
             ctx1.lineWidth = 4;
             ctx1.stroke();
             ctx1.beginPath();
-            ctx1.arc(x2, 150, 10, 0, Math.PI * 2);
+            ctx1.arc(x2, length / 2, 10, 0, Math.PI * 2);
             ctx1.fill();
             ctx1.beginPath();
-            ctx1.arc(x1, 300, 10, 0, Math.PI * 2);
+            ctx1.arc(x1, length, 10, 0, Math.PI * 2);
             ctx1.fill();
 
             ctx1.restore();
@@ -209,7 +210,7 @@
         function updateGraph() {
             if (t <= 10) {
                 const x1 = coupledPendulumX1(t, 1, omega1, omega2) / 2;
-                const y = simplifiedPendulum(t, 0.5, (omega1 + omega2) / 2);
+                const y = simplifiedPendulum(t, 1, (omega1 + omega2) / 2);
 
                 graphData.labels.push(t);
                 graphData.datasets[0].data.push({x: t, y: x1});
