@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ising Model Coarse-Graining Visualizer</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 20px;
+        }
+        #controls {
+            margin: 20px 0;
+        }
+        canvas {
+            background-color: #fff;
+            border: 1px solid #ddd;
+        }
+        #isingCanvas {
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        label {
+            margin-left: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Ising Model Coarse-Graining Visualizer</h1>
+    <canvas id="isingCanvas" width="512" height="512"></canvas>
+    <div id="controls">
+        <input type="range" id="coarseGrainLevel" min="0" max="5" value="0" step="1">
+        <label for="coarseGrainLevel">Coarse-Graining Level: <span id="levelDisplay">0</span></label>
+    </div>
+    <script>
+        const canvas = document.getElementById('isingCanvas');
+        const ctx = canvas.getContext('2d');
+        const slider = document.getElementById('coarseGrainLevel');
+        const levelDisplay = document.getElementById('levelDisplay');
+
+        const gridSize = 64; // Must be a power of 2
+        let grid = [];
+
+        function initializeGrid() {
+            for (let i = 0; i < gridSize; i++) {
+                grid[i] = [];
+                for (let j = 0; j < gridSize; j++) {
+                    grid[i][j] = Math.random() < 0.5 ? 1 : -1;
+                }
+            }
+        }
+
+        function drawArrow(x, y, size, direction) {
+            const halfSize = size / 2;
+            ctx.beginPath();
+            if (direction > 0) {
+                ctx.moveTo(x, y + halfSize);
+                ctx.lineTo(x - halfSize, y - halfSize);
+                ctx.lineTo(x + halfSize, y - halfSize);
+            } else {
+                ctx.moveTo(x, y - halfSize);
+                ctx.lineTo(x - halfSize, y + halfSize);
+                ctx.lineTo(x + halfSize, y + halfSize);
+            }
+            ctx.closePath();
+            ctx.fill();
+        }
+
+        function drawGrid(level) {
+            const blockSize = 2 ** level;
+            const visibleSize = gridSize / blockSize;
+            const cellSize = canvas.width / visibleSize;
+            const arrowSize = cellSize * 0.6; // Adjusted arrow size
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw faint grid lines from previous steps
+            ctx.strokeStyle = '#eee';
+            ctx.lineWidth = 1;
+            for (let l = 1; l < level; l++) {
+                const prevBlockSize = 2 ** l;
+                const prevVisibleSize = gridSize / prevBlockSize;
+                const prevCellSize = canvas.width / prevVisibleSize;
+                for (let i = 0; i <= prevVisibleSize; i++) {
+                    ctx.beginPath();
+                    ctx.moveTo(i * prevCellSize, 0);
+                    ctx.lineTo(i * prevCellSize, canvas.height);
+                    ctx.stroke();
+                    ctx.beginPath();
+                    ctx.moveTo(0, i * prevCellSize);
+                    ctx.lineTo(canvas.width, i * prevCellSize);
+                    ctx.stroke();
+                }
+            }
+
+            // Draw next step grid lines
+            if (level < Math.log2(gridSize)) {
+                ctx.strokeStyle = '#bbb';
+                ctx.lineWidth = 1.5;
+                const nextBlockSize = 2 ** (level + 1);
+                const nextVisibleSize = gridSize / nextBlockSize;
+                const nextCellSize = canvas.width / nextVisibleSize;
+                for (let i = 0; i <= nextVisibleSize; i++) {
+                    ctx.beginPath();
+                    ctx.moveTo(i * nextCellSize, 0);
+                    ctx.lineTo(i * nextCellSize, canvas.height);
+                    ctx.stroke();
+                    ctx.beginPath();
+                    ctx.moveTo(0, i * nextCellSize);
+                    ctx.lineTo(canvas.width, i * nextCellSize);
+                    ctx.stroke();
+                }
+            }
+
+            // Draw current grid lines
+            ctx.strokeStyle = '#ddd';
+            ctx.lineWidth = 1;
+            for (let i = 0; i <= visibleSize; i++) {
+                ctx.beginPath();
+                ctx.moveTo(i * cellSize, 0);
+                ctx.lineTo(i * cellSize, canvas.height);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(0, i * cellSize);
+                ctx.lineTo(canvas.width, i * cellSize);
+                ctx.stroke();
+            }
+
+            // Draw arrows
+            ctx.fillStyle = 'black';
+            for (let i = 0; i < visibleSize; i++) {
+                for (let j = 0; j < visibleSize; j++) {
+                    const x = i * cellSize + cellSize / 2;
+                    const y = j * cellSize + cellSize / 2;
+                    const spin = getBlockSpin(i * blockSize, j * blockSize, blockSize);
+                    drawArrow(x, y, arrowSize, spin);
+                }
+            }
+        }
+
+        function getBlockSpin(x, y, size) {
+            let sum = 0;
+            for (let i = x; i < x + size; i++) {
+                for (let j = y; j < y + size; j++) {
+                    sum += grid[i][j];
+                }
+            }
+            return sum > 0 ? 1 : -1;
+        }
+
+        function updateVisualization() {
+            const level = parseInt(slider.value);
+            levelDisplay.textContent = level;
+            drawGrid(level);
+        }
+
+        slider.addEventListener('input', updateVisualization);
+
+        initializeGrid();
+        updateVisualization();
+    </script>
+</body>
+</html>
