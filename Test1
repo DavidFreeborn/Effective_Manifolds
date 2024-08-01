@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Coupled Pendulum Simulation</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.1/chart.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .container {
+            display: flex;
+            justify-content: space-around;
+            width: 100%;
+            max-width: 1200px;
+        }
+        canvas {
+            border: 1px solid #ddd;
+        }
+        .controls {
+            margin-top: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .slider-container {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        label {
+            width: 100px;
+            text-align: right;
+            margin-right: 10px;
+        }
+        input[type="range"] {
+            width: 200px;
+        }
+        button {
+            margin-top: 10px;
+            padding: 5px 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <canvas id="pendulumCanvas" width="500" height="600"></canvas>
+        <canvas id="graphCanvas" width="500" height="600"></canvas>
+    </div>
+    <div class="controls">
+        <div class="slider-container">
+            <label for="omega1">ω₁:</label>
+            <input type="range" id="omega1" min="0.1" max="10" step="0.1" value="6.28">
+            <span id="omega1Value">6.28</span>
+        </div>
+        <div class="slider-container">
+            <label for="omega2">ω₂:</label>
+            <input type="range" id="omega2" min="0.1" max="10" step="0.1" value="9.42">
+            <span id="omega2Value">9.42</span>
+        </div>
+        <div class="slider-container">
+            <label for="speed">Speed:</label>
+            <input type="range" id="speed" min="0.1" max="1.0" step="0.1" value="1">
+            <span id="speedValue">1.0</span>
+        </div>
+        <button id="restartButton">Restart</button>
+    </div>
+    <div id="omegaValues">
+        <span id="omegaHValue"></span>
+        <span id="omegaLValue"></span>
+    </div>
+
+    <script>
+        const pendulumCanvas = document.getElementById('pendulumCanvas');
+        const graphCanvas = document.getElementById('graphCanvas');
+        const ctx1 = pendulumCanvas.getContext('2d');
+        const ctx2 = graphCanvas.getContext('2d');
+
+        let omega1 = 6.28;
+        let omega2 = 9.42;
+        let speed = 1;
+        let t = 0;
+
+        function coupledPendulumX1(t, d, omega1, omega2) {
+            return d * Math.cos((omega2 - omega1) / 2 * t) * Math.cos((omega1 + omega2) / 2 * t);
+        }
+
+        function coupledPendulumX2(t, d, omega1, omega2) {
+            return d * Math.sin((omega2 - omega1) / 2 * t) * Math.sin((omega1 + omega2) / 2 * t);
+        }
+
+        function simplifiedPendulum(t, d, omegaH) {
+            return d * Math.cos(omegaH * t);
+        }
+
+        function drawPendulum() {
+            ctx1.clearRect(0, 0, pendulumCanvas.width, pendulumCanvas.height);
+            ctx1.save();
+            ctx1.translate(pendulumCanvas.width / 2, pendulumCanvas.height / 6);
+
+            const scale = 200; // Increased scale for larger pendulums
+            const x1 = coupledPendulumX1(t, 1, omega1, omega2) * scale;
+            const x2 = coupledPendulumX2(t, 1, omega1, omega2) * scale;
+            const y = simplifiedPendulum(t, 0.5, (omega1 + omega2) / 2) * scale;
+
+            // Draw simplified pendulum
+            ctx1.beginPath();
+            ctx1.moveTo(0, 0);
+            ctx1.lineTo(y * 2, 300); // Increased length
+            ctx1.strokeStyle = 'blue';
+            ctx1.lineWidth = 4;
+            ctx1.stroke();
+            ctx1.beginPath();
+            ctx1.arc(y * 2, 300, 10, 0, Math.PI * 2);
+            ctx1.fill();
+
+            // Draw coupled pendulum
+            ctx1.beginPath();
+            ctx1.moveTo(0, 0);
+            ctx1.lineTo(x2, 150); // Increased length
+            ctx1.lineTo(x1, 300); // Increased length
+            ctx1.strokeStyle = 'orange';
+            ctx1.lineWidth = 4;
+            ctx1.stroke();
+            ctx1.beginPath();
+            ctx1.arc(x2, 150, 10, 0, Math.PI * 2);
+            ctx1.fill();
+            ctx1.beginPath();
+            ctx1.arc(x1, 300, 10, 0, Math.PI * 2);
+            ctx1.fill();
+
+            ctx1.restore();
+        }
+
+        const graphData = {
+            labels: [],
+            datasets: [
+                {
+                    label: 'Coupled Pendulum',
+                    data: [],
+                    borderColor: 'orange',
+                    borderWidth: 2,
+                    fill: false,
+                    pointRadius: 0
+                },
+                {
+                    label: 'Simplified Pendulum',
+                    data: [],
+                    borderColor: 'blue',
+                    borderWidth: 2,
+                    fill: false,
+                    pointRadius: 0
+                }
+            ]
+        };
+
+        const graphConfig = {
+            type: 'line',
+            data: graphData,
+            options: {
+                responsive: false,
+                animation: false,
+                scales: {
+                    x: {
+                        type: 'linear',
+                        position: 'bottom',
+                        min: 0,
+                        max: 10,
+                        grid: {
+                            display: false
+                        },
+                        ticks: {
+                            display: false
+                        }
+                    },
+                    y: {
+                        min: -1,
+                        max: 1,
+                        grid: {
+                            display: false
+                        },
+                        ticks: {
+                            display: false
+                        }
+                    }
+                },
+                elements: {
+                    point: 
