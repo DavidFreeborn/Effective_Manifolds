@@ -87,54 +87,52 @@
         let speed = 1;
         let t = 0;
 
-        function coupledPendulumX1(t, length, omega1, omega2) {
-            return length * Math.sin(omega1 * t);
+        function coupledPendulumX1(t, d, omega1, omega2) {
+            return d * Math.cos((omega2 - omega1) / 2 * t) * Math.cos((omega1 + omega2) / 2 * t);
         }
 
-        function coupledPendulumX2(t, length, omega1, omega2) {
-            return length * Math.sin(omega2 * t);
+        function coupledPendulumX2(t, d, omega1, omega2) {
+            return d * Math.sin((omega2 - omega1) / 2 * t) * Math.sin((omega1 + omega2) / 2 * t);
         }
 
-        function simplifiedPendulum(t, length, omega) {
-            return length * Math.sin(omega * t);
+        function simplifiedPendulum(t, d, omegaH) {
+            return d * Math.cos(omegaH * t);
         }
 
         function drawPendulum() {
             ctx1.clearRect(0, 0, pendulumCanvas.width, pendulumCanvas.height);
             ctx1.save();
-            ctx1.translate(pendulumCanvas.width / 2, pendulumCanvas.height / 4);
+            ctx1.translate(pendulumCanvas.width / 2, 50);
 
-            const scale = 100; // Adjust scale for realistic pendulum length
-            const length = 150; // Pendulum length
-
-            const x1 = coupledPendulumX1(t, length, omega1, omega2) * scale;
-            const x2 = coupledPendulumX2(t, length, omega1, omega2) * scale;
-            const y = simplifiedPendulum(t, length, (omega1 + omega2) / 2) * scale;
+            const scale = 200; // Scale for larger pendulums
+            const x1 = coupledPendulumX1(t, 1, omega1, omega2) * scale;
+            const x2 = coupledPendulumX2(t, 1, omega1, omega2) * scale;
+            const y = simplifiedPendulum(t, 0.5, (omega1 + omega2) / 2) * scale * 2; // Double the displacement
 
             // Draw simplified pendulum
             ctx1.beginPath();
             ctx1.moveTo(0, 0);
-            ctx1.lineTo(y, length); // Adjust length
+            ctx1.lineTo(y, 300); // Dynamic horizontal position with fixed length
             ctx1.strokeStyle = 'blue';
             ctx1.lineWidth = 4;
             ctx1.stroke();
             ctx1.beginPath();
-            ctx1.arc(y, length, 10, 0, Math.PI * 2);
+            ctx1.arc(y, 300, 10, 0, Math.PI * 2);
             ctx1.fill();
 
             // Draw coupled pendulum
             ctx1.beginPath();
             ctx1.moveTo(0, 0);
-            ctx1.lineTo(x2, length / 2); // Adjust length
-            ctx1.lineTo(x1, length); // Adjust length
+            ctx1.lineTo(x2, 150); // Dynamic position for x2
+            ctx1.lineTo(x1, 300); // Dynamic position for x1
             ctx1.strokeStyle = 'orange';
             ctx1.lineWidth = 4;
             ctx1.stroke();
             ctx1.beginPath();
-            ctx1.arc(x2, length / 2, 10, 0, Math.PI * 2);
+            ctx1.arc(x2, 150, 10, 0, Math.PI * 2);
             ctx1.fill();
             ctx1.beginPath();
-            ctx1.arc(x1, length, 10, 0, Math.PI * 2);
+            ctx1.arc(x1, 300, 10, 0, Math.PI * 2);
             ctx1.fill();
 
             ctx1.restore();
@@ -254,4 +252,14 @@
             document.getElementById('omega2Value').textContent = omega2.toFixed(2);
         });
 
-        document.getElementById('speed').addEventListener('input', (e
+        document.getElementById('speed').addEventListener('input', (e) => {
+            speed = parseFloat(e.target.value);
+            document.getElementById('speedValue').textContent = speed.toFixed(2);
+        });
+
+        document.getElementById('restartButton').addEventListener('click', restartSimulation);
+
+        animate();
+    </script>
+</body>
+</html>
