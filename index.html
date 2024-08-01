@@ -102,29 +102,29 @@
         function drawPendulum() {
             ctx1.clearRect(0, 0, pendulumCanvas.width, pendulumCanvas.height);
             ctx1.save();
-            ctx1.translate(pendulumCanvas.width / 2, pendulumCanvas.height / 6);
+            ctx1.translate(pendulumCanvas.width / 2, 50);
 
-            const scale = 200; // Increased scale for larger pendulums
+            const scale = 200; // Scale for larger pendulums
             const x1 = coupledPendulumX1(t, 1, omega1, omega2) * scale;
             const x2 = coupledPendulumX2(t, 1, omega1, omega2) * scale;
-            const y = simplifiedPendulum(t, 0.5, (omega1 + omega2) / 2) * scale;
+            const y = simplifiedPendulum(t, 0.5, (omega1 + omega2) / 2) * scale * 2; // Double the displacement
 
             // Draw simplified pendulum
             ctx1.beginPath();
             ctx1.moveTo(0, 0);
-            ctx1.lineTo(y * 2, 300); // Increased length
+            ctx1.lineTo(y, 300); // Dynamic horizontal position with fixed length
             ctx1.strokeStyle = 'blue';
             ctx1.lineWidth = 4;
             ctx1.stroke();
             ctx1.beginPath();
-            ctx1.arc(y * 2, 300, 10, 0, Math.PI * 2);
+            ctx1.arc(y, 300, 10, 0, Math.PI * 2);
             ctx1.fill();
 
             // Draw coupled pendulum
             ctx1.beginPath();
             ctx1.moveTo(0, 0);
-            ctx1.lineTo(x2, 150); // Increased length
-            ctx1.lineTo(x1, 300); // Increased length
+            ctx1.lineTo(x2, 150); // Dynamic position for x2
+            ctx1.lineTo(x1, 300); // Dynamic position for x1
             ctx1.strokeStyle = 'orange';
             ctx1.lineWidth = 4;
             ctx1.stroke();
